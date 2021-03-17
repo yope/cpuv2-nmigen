@@ -368,8 +368,9 @@ class Cpu(Elaboratable):
 				s += self.state.eq(State.FETCH)
 			with m.Case(Opcode.bdec):
 				with m.If(self.Rr[self.Rd].any()):
-					s += self.next_pc.eq(self.pc + Cat(self.imm20, Repl(self.imm20[-1], w - self.imm20.width - 2)) << 2)
+					s += self.next_pc.eq(self.pc + (Cat(self.imm20, Repl(self.imm20[-1], w - self.imm20.width - 2)) << 2))
 					s += self.Rr[self.Rd].eq(self.Rr[self.Rd] - 1)
+				s += self.state.eq(State.FETCH)
 			with m.Case(Opcode.jsr):
 				s += self.lr.eq(self.pc)
 				s += self.next_pc.eq(self.Rr[self.Rd] + self.imm20)
