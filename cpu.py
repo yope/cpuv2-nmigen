@@ -352,7 +352,7 @@ class Cpu(Elaboratable):
 				self._set_sel_o(m, s, self.store_addr)
 				with m.Switch(self.ls_size):
 					with m.Case(0):
-						bs = self.load_addr[:2] << 3
+						bs = self.store_addr[:2] << 3
 						s += self.bus.dat_o.eq((self.Rr[self.Rs1] & 0xff) << bs)
 					with m.Case(1):
 						s += self.bus.dat_o.eq(Mux(self.store_addr[1], self.Rr[self.Rs1] << 16, self.Rr[self.Rs1] & 0xffff))
