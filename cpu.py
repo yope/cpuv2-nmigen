@@ -187,6 +187,7 @@ class Cpu(Elaboratable):
 		self.imm12 = Signal(w - wr4)
 		self.imm16 = Signal(w - wr3)
 		self.imm20 = Signal(w - wr2)
+		self.imm20s = Signal(signed(w))
 		self.imm24 = Signal(w - wr1)
 		self.ls_size = Signal(2)
 
@@ -231,6 +232,7 @@ class Cpu(Elaboratable):
 			self.imm12.eq(self.ir),
 			self.imm16.eq(self.ir),
 			self.imm20.eq(self.ir),
+			self.imm20s.eq(Cat(self.imm20, Repl(self.imm20[-1], w - self.imm20.width))),
 			self.imm24.eq(self.ir),
 			self.irqaddr.eq(Mux(self.irqreg[0], 1, Mux(self.irqreg[1], 2, Mux(self.irqreg[2], 3, 4)))),
 			self.nextirq.eq(Mux(self.irqreg[0], 1, Mux(self.irqreg[1], 2, Mux(self.irqreg[2], 4, 8))))
@@ -332,7 +334,7 @@ class Cpu(Elaboratable):
 				s += self.Rr[self.Rd].eq(self.imm20)
 				s += self.state.eq(State.FETCH)
 			with m.Case(Opcode.ldis):
-				s += self.Rr[self.Rd].eq(Cat(self.imm20, Repl(self.imm20[-1], w - self.imm20.width)))
+				s += self.Rr[self.Rd].eq(self.imm20s)
 				s += self.state.eq(State.FETCH)
 			with m.Case(Opcode.ldiu):
 				s += self.Rr[self.Rd].eq(self.imm20 << (w - self.imm20.width))
@@ -368,7 +370,7 @@ class Cpu(Elaboratable):
 				s += self.state.eq(State.FETCH)
 			with m.Case(Opcode.bdec):
 				with m.If(self.Rr[self.Rd].any()):
-					s += self.next_pc.eq(self.pc + (Cat(self.imm20, Repl(self.imm20[-1], w - self.imm20.width - 2)) << 2))
+					s += self.next_pc.eq(self.pc + (self.imm20s << 2))
 					s += self.Rr[self.Rd].eq(self.Rr[self.Rd] - 1)
 				s += self.state.eq(State.FETCH)
 			with m.Case(Opcode.jsr):
