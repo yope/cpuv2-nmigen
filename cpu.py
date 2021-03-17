@@ -437,6 +437,7 @@ if __name__ == "__main__":
 				else:
 					mem.append(emit)
 		a = Assemble2Mem("monitor.s")
+		mem = {a:v for a, v, in enumerate(mem)}
 		top = Module()
 		top.submodules.cpu = cpu = Cpu(32, 16)
 		top.d.comb += cpu.bus.ack_i.eq(cpu.bus.stb_o)
@@ -446,12 +447,17 @@ if __name__ == "__main__":
 				stb = yield cpu.bus.stb_o
 				we = yield cpu.bus.we_o
 				adr = yield cpu.bus.adr_o // 4
+				sel = yield cpu.bus.sel_o
 				if stb:
 					if we:
-						if adr < len(mem):
-							mem[adr] = yield cpu.bus.dat_o
+						msk = 0xff if sel & 1 else 0
+						msk |= 0xff00 if sel & 2 else 0
+						msk |= 0xff0000 if sel & 4 else 0
+						msk |= 0xff000000 if sel & 8 else 0
+						mem[adr] = (mem.get(adr, 0) & ~msk) | ((yield cpu.bus.dat_o) & msk)
+						print("Mem write addr {:08x} = {:08x}".format(adr * 4, mem[adr]))
 					else:
-						if adr >= len(mem):
+						if not adr in mem:
 							do = 0x00213200
 						else:
 							do = mem[adr]
