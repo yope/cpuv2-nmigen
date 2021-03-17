@@ -428,24 +428,36 @@ class Cpu(Elaboratable):
 if __name__ == "__main__":
 	simulate = ("--sim" in sys.argv)
 	if simulate:
-		cpu = Cpu(32, 16)
-		mem = [0x20101234, 0x20202345]
+		from assemble import Cpuv2Assembler
+		mem = []
+		class Assemble2Mem(Cpuv2Assembler):
+			def emit(self, emit):
+				if isinstance(emit, list):
+					mem.extend(emit)
+				else:
+					mem.append(emit)
+		a = Assemble2Mem("monitor.s")
+		top = Module()
+		top.submodules.cpu = cpu = Cpu(32, 16)
+		top.d.comb += cpu.bus.ack_i.eq(cpu.bus.stb_o)
 		print("Simulating...")
 		def process():
-			for i in range(100):
+			for i in range(300):
 				stb = yield cpu.bus.stb_o
+				we = yield cpu.bus.we_o
 				adr = yield cpu.bus.adr_o // 4
 				if stb:
-					if adr >= len(mem):
-						do = 0x00213200
+					if we:
+						if adr < len(mem):
+							mem[adr] = yield cpu.bus.dat_o
 					else:
-						do = mem[adr]
-					yield cpu.bus.dat_i.eq(do)
-					yield cpu.bus.ack_i.eq(1)
-				else:
-					yield cpu.bus.ack_i.eq(0)
+						if adr >= len(mem):
+							do = 0x00213200
+						else:
+							do = mem[adr]
+						yield cpu.bus.dat_i.eq(do)
 				yield
-		sim = Simulator(cpu)
+		sim = Simulator(top)
 		sim.add_clock(1e-7)
 		sim.add_sync_process(process)
 		with sim.write_vcd("test.vcd", "test.gtkw", traces=cpu.ports()):
