@@ -2,12 +2,12 @@
 
 from typing import List, Tuple
 
-from nmigen import *
-from nmigen.hdl.rec import *
-from nmigen.build import *
-from nmigen.asserts import Assert, Assume, Cover
-from nmigen.cli import main_parser, main_runner
-from nmigen.back.pysim import Simulator, Delay, Settle
+from amaranth import *
+from amaranth.hdl.rec import *
+from amaranth.build import *
+from amaranth.asserts import Assert, Assume, Cover
+from amaranth.cli import main_parser, main_runner
+from amaranth.back.pysim import Simulator, Delay, Settle
 import sys
 
 from enum import Enum, unique
